@@ -1,0 +1,196 @@
+import { getDishRepository } from '../../dishes/repositories/dish.repository';
+import { getIngredientRepository } from '../../ingredients/repositories/ingredient.repository';
+import { type MealPlanResponseDto, type MealPlanItemDto } from '../dto/meal-plan-response.dto';
+
+export class MealPlanService {
+  constructor(
+    private readonly dishRepository = getDishRepository(),
+    private readonly ingredientRepository = getIngredientRepository(),
+  ) {}
+
+  public async generate(targetCalories: number, numberOfMeals?: number): Promise<MealPlanResponseDto> {
+    const mealsToGenerate = numberOfMeals ?? 3;
+    const targetPerMeal = targetCalories / mealsToGenerate;
+
+    const allDishes = await this.dishRepository.findAll();
+    const allIngredients = await this.ingredientRepository.findAll();
+
+    // Calculate nutrition for all dishes
+    const dishesWithNutrition = await Promise.all(
+      allDishes.map(async (dish) => ({
+        dish,
+        nutrition: await this.calculateDishNutrition(dish),
+      })),
+    );
+
+    // Sort dishes by how close they are to targetPerMeal (ascending by absolute difference)
+    const sortedDishes = [...dishesWithNutrition].sort(
+      (a, b) => Math.abs(a.nutrition.calories - targetPerMeal) - Math.abs(b.nutrition.calories - targetPerMeal),
+    );
+
+    const meals: MealPlanItemDto[] = [];
+    const usedDishIds = new Set<string>();
+    let remainingCalories = targetCalories;
+    let totalNutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+    // Try to fill meals with existing dishes first
+    for (let i = 0; i < mealsToGenerate && sortedDishes.length > 0; i++) {
+      const suitableDish = sortedDishes.find(
+        (d) =>
+          !usedDishIds.has(d.dish.id) &&
+          d.nutrition.calories <= targetPerMeal * 1.5 &&
+          d.nutrition.calories >= targetPerMeal * 0.3,
+      );
+
+      if (suitableDish) {
+        usedDishIds.add(suitableDish.dish.id);
+
+        meals.push({
+          type: 'dish',
+          name: suitableDish.dish.name,
+          dishId: suitableDish.dish.id,
+          ingredients: suitableDish.dish.ingredients.map((ing) => ({
+            ingredientId: ing.ingredientId,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })),
+          nutrition: suitableDish.nutrition,
+        });
+
+        totalNutrition.calories += suitableDish.nutrition.calories;
+        totalNutrition.protein += suitableDish.nutrition.protein;
+        totalNutrition.carbs += suitableDish.nutrition.carbs;
+        totalNutrition.fat += suitableDish.nutrition.fat;
+      }
+    }
+
+    remainingCalories = targetCalories - totalNutrition.calories;
+
+    // Fill remaining calories with individual ingredients if needed
+    if (remainingCalories > 50 && meals.length < mealsToGenerate) {
+      const fillerMeal = await this.buildMealFromIngredients(remainingCalories, allIngredients, usedDishIds);
+      if (fillerMeal) {
+        meals.push(fillerMeal);
+        totalNutrition.calories += fillerMeal.nutrition.calories;
+        totalNutrition.protein += fillerMeal.nutrition.protein;
+        totalNutrition.carbs += fillerMeal.nutrition.carbs;
+        totalNutrition.fat += fillerMeal.nutrition.fat;
+      }
+    }
+
+    return {
+      targetCalories,
+      meals,
+      total: {
+        calories: Number(totalNutrition.calories.toFixed(2)),
+        protein: Number(totalNutrition.protein.toFixed(2)),
+        carbs: Number(totalNutrition.carbs.toFixed(2)),
+        fat: Number(totalNutrition.fat.toFixed(2)),
+      },
+    };
+  }
+
+  private async buildMealFromIngredients(
+    targetCalories: number,
+    allIngredients: Array<{ id: string; name: string; unit: string; baseAmount: string; calories: number; protein: number; carbs: number; fat: number; tags: string[]; isHealthy: boolean; isCommonInMexico: boolean }>,
+    _usedDishIds: Set<string>,
+  ): Promise<MealPlanItemDto | null> {
+    const ingredients = allIngredients;
+    if (ingredients.length === 0) return null;
+
+    // Sort ingredients by calorie density (calories per base unit) to pick the most efficient ones
+    const scored = ingredients.map((ingredient: any) => ({
+      ingredient,
+      calPerBase: ingredient.calories / this.getBaseQuantityValue(ingredient),
+    }));
+
+    // Prefer protein-rich healthy ingredients
+    const sorted = scored.sort((a: any, b: any) => b.ingredient.protein - a.ingredient.protein);
+
+    const selectedIngredients: { ingredientId: string; name: string; quantity: number; unit: string }[] = [];
+    let accumulatedCalories = 0;
+    let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+    for (const { ingredient } of sorted) {
+      if (accumulatedCalories >= targetCalories * 0.9) break;
+
+      const baseValue = this.getBaseQuantityValue(ingredient);
+      const calPerUnit = ingredient.calories / baseValue;
+      const remainingCal = targetCalories - accumulatedCalories;
+      const quantity = Math.round((remainingCal / calPerUnit / baseValue) * baseValue);
+
+      if (quantity <= 0) continue;
+
+      const multiplier = quantity / baseValue;
+      const itemCalories = ingredient.calories * multiplier;
+
+      selectedIngredients.push({
+        ingredientId: ingredient.id,
+        name: ingredient.name,
+        quantity,
+        unit: ingredient.unit,
+      });
+
+      accumulatedCalories += itemCalories;
+      nutrition.calories += itemCalories;
+      nutrition.protein += ingredient.protein * multiplier;
+      nutrition.carbs += ingredient.carbs * multiplier;
+      nutrition.fat += ingredient.fat * multiplier;
+
+      if (selectedIngredients.length >= 4) break;
+    }
+
+    if (selectedIngredients.length === 0) return null;
+
+    return {
+      type: 'ingredients',
+      name: 'Combinación de ingredientes',
+      ingredients: selectedIngredients.map((i) => ({
+        ingredientId: i.ingredientId,
+        name: i.name,
+        quantity: i.quantity,
+        unit: i.unit,
+      })),
+      nutrition: {
+        calories: Number(nutrition.calories.toFixed(2)),
+        protein: Number(nutrition.protein.toFixed(2)),
+        carbs: Number(nutrition.carbs.toFixed(2)),
+        fat: Number(nutrition.fat.toFixed(2)),
+      },
+    };
+  }
+
+  private async calculateDishNutrition(dish: {
+    ingredients: { ingredientId: string; quantity: number }[];
+  }): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
+    let calories = 0;
+    let protein = 0;
+    let carbs = 0;
+    let fat = 0;
+
+    for (const ingRef of dish.ingredients) {
+      const ingredient = await this.ingredientRepository.findById(ingRef.ingredientId);
+      if (!ingredient) continue;
+
+      const multiplier = ingRef.quantity / this.getBaseQuantityValue(ingredient);
+      calories += ingredient.calories * multiplier;
+      protein += ingredient.protein * multiplier;
+      carbs += ingredient.carbs * multiplier;
+      fat += ingredient.fat * multiplier;
+    }
+
+    return {
+      calories: Number(calories.toFixed(2)),
+      protein: Number(protein.toFixed(2)),
+      carbs: Number(carbs.toFixed(2)),
+      fat: Number(fat.toFixed(2)),
+    };
+  }
+
+  private getBaseQuantityValue(ingredient: { unit: string; baseAmount: string }): number {
+    if (ingredient.unit === 'g') return 100;
+    if (ingredient.unit === 'pieza') return 1;
+    return Number(ingredient.baseAmount.match(/\d+/)?.[0] ?? 1);
+  }
+}
