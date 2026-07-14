@@ -130,6 +130,7 @@ export class DishService {
       category: dish.category,
       tags: dish.tags,
       ingredients: dish.ingredients,
+      imageUrl: dish.imageUrl,
       nutrition,
     };
   }

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsString, IsNumber, IsBoolean, IsArray, IsNotEmpty, Min, MaxLength, ValidateNested, ArrayMinSize } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsNotEmpty, IsOptional, Min, MaxLength, ValidateNested, ArrayMinSize } from 'class-validator';
 
 class DishIngredientInputDto {
   @IsString()
@@ -36,4 +36,8 @@ export class CreateDishDto {
   @ValidateNested({ each: true })
   @Type(() => DishIngredientInputDto)
   ingredients!: DishIngredientInputDto[];
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }

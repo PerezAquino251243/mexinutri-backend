@@ -5,6 +5,7 @@ import { DishController } from '../modules/dishes';
 import { SearchController } from '../modules/search';
 import { NutritionController } from '../modules/nutrition/controllers/nutrition.controller';
 import { MealPlanController } from '../modules/meal-plans/controllers/meal-plan.controller';
+import { UploadController } from '../modules/uploads/upload.controller';
 
 const router = Router();
 const healthController = new HealthController();
@@ -13,6 +14,7 @@ const dishController = new DishController();
 const searchController = new SearchController();
 const nutritionController = new NutritionController();
 const mealPlanController = new MealPlanController();
+const uploadController = new UploadController();
 
 router.get('/health', healthController.getHealth.bind(healthController));
 router.get('/ingredients', ingredientController.getIngredients);
@@ -28,5 +30,6 @@ router.delete('/dishes/:id', dishController.deleteDish);
 router.get('/search', searchController.search);
 router.post('/nutrition/calculate', nutritionController.calculate);
 router.post('/meal-plans/generate', mealPlanController.generate);
+router.post('/dishes/:id/image', uploadController.uploadMiddleware, uploadController.uploadDishImage);
 
 export default router;

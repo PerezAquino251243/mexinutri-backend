@@ -12,6 +12,7 @@ export interface DishResponseDto {
   category: string;
   tags: string[];
   ingredients: DishIngredientDto[];
+  imageUrl?: string;
   nutrition: {
     calories: number;
     protein: number;

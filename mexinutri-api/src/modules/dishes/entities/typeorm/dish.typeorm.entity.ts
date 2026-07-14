@@ -18,6 +18,9 @@ export class DishEntity {
   @Column({ type: 'simple-array' })
   tags!: string[];
 
+  @Column({ name: 'image_url', type: 'varchar', nullable: true })
+  imageUrl?: string;
+
   @OneToMany(() => DishIngredientEntity, (dishIngredient) => dishIngredient.dish, {
     cascade: true,
     eager: true,

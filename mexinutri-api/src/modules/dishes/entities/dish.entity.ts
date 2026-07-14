@@ -12,4 +12,5 @@ export interface DishEntity {
   category: string;
   tags: string[];
   ingredients: DishIngredientEntity[];
+  imageUrl?: string;
 }

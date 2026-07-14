@@ -37,4 +37,8 @@ export class UpdateDishDto {
   @ValidateNested({ each: true })
   @Type(() => DishIngredientInputDto)
   ingredients?: DishIngredientInputDto[];
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
