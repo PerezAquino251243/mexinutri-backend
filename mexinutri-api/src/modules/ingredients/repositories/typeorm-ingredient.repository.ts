@@ -14,7 +14,7 @@ export class TypeOrmIngredientRepository implements IngredientRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
-  public async findById(id: string): Promise<IngredientEntity | null> {
+  public async findById(id: number): Promise<IngredientEntity | null> {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.toDomain(entity) : null;
   }
@@ -32,28 +32,27 @@ export class TypeOrmIngredientRepository implements IngredientRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
-  public async create(ingredient: IngredientEntity): Promise<IngredientEntity> {
+  public async create(data: Omit<IngredientEntity, 'id'>): Promise<IngredientEntity> {
     const entity = this.repo.create({
-      id: ingredient.id,
-      name: ingredient.name,
-      description: ingredient.description,
-      category: ingredient.category,
-      unit: ingredient.unit,
-      baseAmount: ingredient.baseAmount,
-      calories: ingredient.calories,
-      protein: ingredient.protein,
-      carbs: ingredient.carbs,
-      fat: ingredient.fat,
-      tags: ingredient.tags,
-      isHealthy: ingredient.isHealthy,
-      isCommonInMexico: ingredient.isCommonInMexico,
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      unit: data.unit,
+      baseAmount: data.baseAmount,
+      calories: data.calories,
+      protein: data.protein,
+      carbs: data.carbs,
+      fat: data.fat,
+      tags: data.tags,
+      isHealthy: data.isHealthy,
+      isCommonInMexico: data.isCommonInMexico,
     });
 
     const saved = await this.repo.save(entity);
     return this.toDomain(saved);
   }
 
-  public async update(id: string, data: Partial<IngredientEntity>): Promise<IngredientEntity | null> {
+  public async update(id: number, data: Partial<IngredientEntity>): Promise<IngredientEntity | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 
@@ -62,7 +61,7 @@ export class TypeOrmIngredientRepository implements IngredientRepository {
     return this.toDomain(saved);
   }
 
-  public async delete(id: string): Promise<boolean> {
+  public async delete(id: number): Promise<boolean> {
     const result = await this.repo.delete(id);
     return (result.affected ?? 0) > 0;
   }

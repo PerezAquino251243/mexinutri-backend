@@ -4,16 +4,16 @@ import { AppDataSource } from '../../../config/database';
 
 export interface IngredientRepository {
   findAll(): Promise<IngredientEntity[]>;
-  findById(id: string): Promise<IngredientEntity | null>;
+  findById(id: number): Promise<IngredientEntity | null>;
   findByQuery(query: string): Promise<IngredientEntity[]>;
-  create(ingredient: IngredientEntity): Promise<IngredientEntity>;
-  update(id: string, data: Partial<IngredientEntity>): Promise<IngredientEntity | null>;
-  delete(id: string): Promise<boolean>;
+  create(ingredient: Omit<IngredientEntity, 'id'>): Promise<IngredientEntity>;
+  update(id: number, data: Partial<IngredientEntity>): Promise<IngredientEntity | null>;
+  delete(id: number): Promise<boolean>;
 }
 
 const seedIngredients: IngredientEntity[] = [
   {
-    id: 'ingredient-huevo',
+    id: 1,
     name: 'Huevo',
     description: 'Alimento base rico en proteína.',
     category: 'Proteína',
@@ -28,7 +28,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-espinaca',
+    id: 2,
     name: 'Espinaca',
     description: 'Hoja verde muy utilizada en ensaladas y platillos.',
     category: 'Vegetal',
@@ -43,7 +43,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-pechuga-pollo',
+    id: 3,
     name: 'Pechuga de pollo',
     description: 'Proteína magra muy popular en cocina casera.',
     category: 'Proteína',
@@ -58,7 +58,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-arroz',
+    id: 4,
     name: 'Arroz',
     description: 'Cereal base para múltiples platillos.',
     category: 'Grano',
@@ -73,7 +73,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-tortilla-maiz',
+    id: 5,
     name: 'Tortilla de maíz',
     description: 'Base tradicional para tacos y otros platillos.',
     category: 'Grano',
@@ -88,7 +88,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-aguacate',
+    id: 6,
     name: 'Aguacate',
     description: 'Fruta con grasas saludables y textura cremosa.',
     category: 'Fruta',
@@ -103,7 +103,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-tomate',
+    id: 7,
     name: 'Tomate',
     description: 'Vegetal base para salsas y platillos calientes.',
     category: 'Vegetal',
@@ -118,7 +118,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-cebolla',
+    id: 8,
     name: 'Cebolla',
     description: 'Ingrediente aromático de uso muy común.',
     category: 'Vegetal',
@@ -133,7 +133,7 @@ const seedIngredients: IngredientEntity[] = [
     isCommonInMexico: true,
   },
   {
-    id: 'ingredient-frijol',
+    id: 9,
     name: 'Frijol',
     description: 'Legumbre nutritiva y muy presente en la dieta mexicana.',
     category: 'Legumbre',
@@ -164,16 +164,13 @@ export function getIngredientRepository(): IngredientRepository {
 
 export class InMemoryIngredientRepository implements IngredientRepository {
   private readonly ingredients: IngredientEntity[] = [...seedIngredients];
-
-  public static getInstance(): IngredientRepository {
-    return getIngredientRepository();
-  }
+  private nextId: number = 10;
 
   public async findAll(): Promise<IngredientEntity[]> {
     return [...this.ingredients];
   }
 
-  public async findById(id: string): Promise<IngredientEntity | null> {
+  public async findById(id: number): Promise<IngredientEntity | null> {
     return this.ingredients.find((ingredient) => ingredient.id === id) ?? null;
   }
 
@@ -194,12 +191,16 @@ export class InMemoryIngredientRepository implements IngredientRepository {
     });
   }
 
-  public async create(ingredient: IngredientEntity): Promise<IngredientEntity> {
+  public async create(data: Omit<IngredientEntity, 'id'>): Promise<IngredientEntity> {
+    const ingredient: IngredientEntity = {
+      id: this.nextId++,
+      ...data,
+    };
     this.ingredients.push(ingredient);
     return ingredient;
   }
 
-  public async update(id: string, data: Partial<IngredientEntity>): Promise<IngredientEntity | null> {
+  public async update(id: number, data: Partial<IngredientEntity>): Promise<IngredientEntity | null> {
     const index = this.ingredients.findIndex((ingredient) => ingredient.id === id);
     if (index === -1) {
       return null;
@@ -210,7 +211,7 @@ export class InMemoryIngredientRepository implements IngredientRepository {
     return updated;
   }
 
-  public async delete(id: string): Promise<boolean> {
+  public async delete(id: number): Promise<boolean> {
     const index = this.ingredients.findIndex((ingredient) => ingredient.id === id);
     if (index === -1) {
       return false;

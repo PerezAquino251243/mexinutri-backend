@@ -1,6 +1,6 @@
 export interface SearchResultItemDto {
   type: 'ingredient' | 'dish';
-  id: string;
+  id: number;
   name: string;
   description?: string;
   category?: string;

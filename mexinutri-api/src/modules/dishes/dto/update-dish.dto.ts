@@ -2,8 +2,9 @@ import { Type } from 'class-transformer';
 import { IsString, IsNumber, IsArray, IsOptional, Min, MaxLength, ValidateNested, ArrayMinSize } from 'class-validator';
 
 class DishIngredientInputDto {
-  @IsString()
-  ingredientId!: string;
+  @IsNumber()
+  @Min(1)
+  ingredientId!: number;
 
   @IsNumber()
   @Min(1)

@@ -25,7 +25,10 @@ export class UploadController {
 
   public uploadDishImage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dishId = typeof req.params.id === 'string' ? req.params.id : '';
+      const dishId = Number(req.params.id);
+      if (isNaN(dishId)) {
+        throw new AppError('Invalid dish ID', 400);
+      }
 
       // Verify dish exists
       const dish = await this.dishRepository.findById(dishId);
@@ -39,7 +42,7 @@ export class UploadController {
       }
 
       const imageUrl = await this.uploadService.uploadDishImage(
-        dishId,
+        String(dishId),
         file.buffer,
         file.mimetype,
       );

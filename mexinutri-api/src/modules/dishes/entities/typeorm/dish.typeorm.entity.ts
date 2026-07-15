@@ -1,10 +1,10 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { DishIngredientEntity } from './dish-ingredient.typeorm.entity';
 
 @Entity('dish')
 export class DishEntity {
-  @PrimaryColumn({ type: 'varchar' })
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
   @Column({ type: 'varchar' })
   name!: string;

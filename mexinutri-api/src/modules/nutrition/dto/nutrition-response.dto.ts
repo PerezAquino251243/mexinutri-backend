@@ -1,6 +1,6 @@
 export interface NutritionResponseDto {
   items: {
-    ingredientId: string;
+    ingredientId: number;
     name: string;
     quantity: number;
     unit: string;

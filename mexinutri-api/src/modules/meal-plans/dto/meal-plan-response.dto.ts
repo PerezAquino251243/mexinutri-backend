@@ -1,9 +1,9 @@
 export interface MealPlanItemDto {
   type: 'dish' | 'ingredients';
   name?: string;
-  dishId?: string;
+  dishId?: number;
   ingredients?: {
-    ingredientId: string;
+    ingredientId: number;
     name: string;
     quantity: number;
     unit: string;

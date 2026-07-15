@@ -1,12 +1,12 @@
 export interface DishIngredientEntity {
-  ingredientId: string;
+  ingredientId: number;
   name: string;
   quantity: number;
   unit: string;
 }
 
 export interface DishEntity {
-  id: string;
+  id: number;
   name: string;
   description: string;
   category: string;

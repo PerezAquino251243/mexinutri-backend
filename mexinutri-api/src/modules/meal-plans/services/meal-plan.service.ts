@@ -1,5 +1,6 @@
 import { getDishRepository } from '../../dishes/repositories/dish.repository';
 import { getIngredientRepository } from '../../ingredients/repositories/ingredient.repository';
+import { type IngredientEntity } from '../../ingredients/entities/ingredient.entity';
 import { type MealPlanResponseDto, type MealPlanItemDto } from '../dto/meal-plan-response.dto';
 
 export class MealPlanService {
@@ -15,7 +16,6 @@ export class MealPlanService {
     const allDishes = await this.dishRepository.findAll();
     const allIngredients = await this.ingredientRepository.findAll();
 
-    // Calculate nutrition for all dishes
     const dishesWithNutrition = await Promise.all(
       allDishes.map(async (dish) => ({
         dish,
@@ -23,17 +23,14 @@ export class MealPlanService {
       })),
     );
 
-    // Sort dishes by how close they are to targetPerMeal (ascending by absolute difference)
     const sortedDishes = [...dishesWithNutrition].sort(
       (a, b) => Math.abs(a.nutrition.calories - targetPerMeal) - Math.abs(b.nutrition.calories - targetPerMeal),
     );
 
     const meals: MealPlanItemDto[] = [];
-    const usedDishIds = new Set<string>();
-    let remainingCalories = targetCalories;
+    const usedDishIds = new Set<number>();
     let totalNutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    // Try to fill meals with existing dishes first
     for (let i = 0; i < mealsToGenerate && sortedDishes.length > 0; i++) {
       const suitableDish = sortedDishes.find(
         (d) =>
@@ -65,11 +62,10 @@ export class MealPlanService {
       }
     }
 
-    remainingCalories = targetCalories - totalNutrition.calories;
+    const remainingCalories = targetCalories - totalNutrition.calories;
 
-    // Fill remaining calories with individual ingredients if needed
     if (remainingCalories > 50 && meals.length < mealsToGenerate) {
-      const fillerMeal = await this.buildMealFromIngredients(remainingCalories, allIngredients, usedDishIds);
+      const fillerMeal = await this.buildMealFromIngredients(remainingCalories, allIngredients);
       if (fillerMeal) {
         meals.push(fillerMeal);
         totalNutrition.calories += fillerMeal.nutrition.calories;
@@ -93,26 +89,17 @@ export class MealPlanService {
 
   private async buildMealFromIngredients(
     targetCalories: number,
-    allIngredients: Array<{ id: string; name: string; unit: string; baseAmount: string; calories: number; protein: number; carbs: number; fat: number; tags: string[]; isHealthy: boolean; isCommonInMexico: boolean }>,
-    _usedDishIds: Set<string>,
+    allIngredients: IngredientEntity[],
   ): Promise<MealPlanItemDto | null> {
-    const ingredients = allIngredients;
-    if (ingredients.length === 0) return null;
+    if (allIngredients.length === 0) return null;
 
-    // Sort ingredients by calorie density (calories per base unit) to pick the most efficient ones
-    const scored = ingredients.map((ingredient: any) => ({
-      ingredient,
-      calPerBase: ingredient.calories / this.getBaseQuantityValue(ingredient),
-    }));
+    const sorted = [...allIngredients].sort((a, b) => b.protein - a.protein);
 
-    // Prefer protein-rich healthy ingredients
-    const sorted = scored.sort((a: any, b: any) => b.ingredient.protein - a.ingredient.protein);
-
-    const selectedIngredients: { ingredientId: string; name: string; quantity: number; unit: string }[] = [];
+    const selectedIngredients: { ingredientId: number; name: string; quantity: number; unit: string }[] = [];
     let accumulatedCalories = 0;
     let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    for (const { ingredient } of sorted) {
+    for (const ingredient of sorted) {
       if (accumulatedCalories >= targetCalories * 0.9) break;
 
       const baseValue = this.getBaseQuantityValue(ingredient);
@@ -146,12 +133,7 @@ export class MealPlanService {
     return {
       type: 'ingredients',
       name: 'Combinación de ingredientes',
-      ingredients: selectedIngredients.map((i) => ({
-        ingredientId: i.ingredientId,
-        name: i.name,
-        quantity: i.quantity,
-        unit: i.unit,
-      })),
+      ingredients: selectedIngredients,
       nutrition: {
         calories: Number(nutrition.calories.toFixed(2)),
         protein: Number(nutrition.protein.toFixed(2)),
@@ -162,7 +144,7 @@ export class MealPlanService {
   }
 
   private async calculateDishNutrition(dish: {
-    ingredients: { ingredientId: string; quantity: number }[];
+    ingredients: { ingredientId: number; quantity: number }[];
   }): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
     let calories = 0;
     let protein = 0;

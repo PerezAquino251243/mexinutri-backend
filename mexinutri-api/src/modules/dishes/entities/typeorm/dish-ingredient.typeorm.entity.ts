@@ -6,8 +6,8 @@ export class DishIngredientEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: 'ingredient_id', type: 'varchar' })
-  ingredientId!: string;
+  @Column({ name: 'ingredient_id', type: 'int' })
+  ingredientId!: number;
 
   @Column({ type: 'varchar' })
   name!: string;

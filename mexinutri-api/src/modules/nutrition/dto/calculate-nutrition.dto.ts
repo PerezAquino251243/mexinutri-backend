@@ -2,9 +2,9 @@ import { Type } from 'class-transformer';
 import { IsString, IsNumber, IsArray, IsNotEmpty, Min, ValidateNested, ArrayMinSize } from 'class-validator';
 
 class NutritionItemDto {
-  @IsString()
-  @IsNotEmpty()
-  ingredientId!: string;
+  @IsNumber()
+  @Min(1)
+  ingredientId!: number;
 
   @IsNumber()
   @Min(1)

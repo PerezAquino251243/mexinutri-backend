@@ -8,7 +8,8 @@ export interface CreateDishInput {
   description: string;
   category: string;
   tags: string[];
-  ingredients: { ingredientId: string; quantity: number }[];
+  ingredients: { ingredientId: number; quantity: number }[];
+  imageUrl?: string;
 }
 
 export interface UpdateDishInput {
@@ -16,7 +17,8 @@ export interface UpdateDishInput {
   description?: string;
   category?: string;
   tags?: string[];
-  ingredients?: { ingredientId: string; quantity: number }[];
+  ingredients?: { ingredientId: number; quantity: number }[];
+  imageUrl?: string;
 }
 
 export class DishService {
@@ -33,7 +35,7 @@ export class DishService {
     return Promise.all(dishes.map((dish) => this.mapToResponse(dish)));
   }
 
-  public async getDishById(id: string): Promise<DishResponseDto | null> {
+  public async getDishById(id: number): Promise<DishResponseDto | null> {
     const dish = await this.dishRepository.findById(id);
 
     if (!dish) {
@@ -60,22 +62,19 @@ export class DishService {
       });
     }
 
-    const id = `dish-${data.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-
-    const dish: DishEntity = {
-      id,
+    const dish = await this.dishRepository.create({
       name: data.name,
       description: data.description,
       category: data.category,
       tags: data.tags,
       ingredients: resolvedIngredients,
-    };
+      imageUrl: data.imageUrl,
+    });
 
-    const created = await this.dishRepository.create(dish);
-    return this.mapToResponse(created);
+    return this.mapToResponse(dish);
   }
 
-  public async updateDish(id: string, data: UpdateDishInput): Promise<DishResponseDto | null> {
+  public async updateDish(id: number, data: UpdateDishInput): Promise<DishResponseDto | null> {
     const existingDish = await this.dishRepository.findById(id);
     if (!existingDish) {
       return null;
@@ -87,6 +86,7 @@ export class DishService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
 
     if (data.ingredients !== undefined) {
       const resolvedIngredients: DishIngredientEntity[] = [];
@@ -116,7 +116,7 @@ export class DishService {
     return this.mapToResponse(updated);
   }
 
-  public async deleteDish(id: string): Promise<boolean> {
+  public async deleteDish(id: number): Promise<boolean> {
     return this.dishRepository.delete(id);
   }
 

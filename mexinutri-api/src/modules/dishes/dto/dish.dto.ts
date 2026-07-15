@@ -1,12 +1,12 @@
 export interface DishIngredientDto {
-  ingredientId: string;
+  ingredientId: number;
   name: string;
   quantity: number;
   unit: string;
 }
 
 export interface DishResponseDto {
-  id: string;
+  id: number;
   name: string;
   description: string;
   category: string;

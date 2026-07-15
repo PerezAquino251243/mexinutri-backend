@@ -2,7 +2,7 @@ import { getIngredientRepository } from '../../ingredients/repositories/ingredie
 import { type NutritionResponseDto } from '../dto/nutrition-response.dto';
 
 export interface NutritionCalculationInput {
-  ingredientId: string;
+  ingredientId: number;
   quantity: number;
 }
 

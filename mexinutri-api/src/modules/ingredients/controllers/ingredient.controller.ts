@@ -20,7 +20,10 @@ export class IngredientController {
 
   public getIngredientById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const ingredientId = typeof req.params.id === 'string' ? req.params.id : '';
+      const ingredientId = Number(req.params.id);
+      if (isNaN(ingredientId)) {
+        throw new AppError('Invalid ingredient ID', 400);
+      }
       const ingredient = await this.ingredientService.getIngredientById(ingredientId);
 
       if (!ingredient) {
@@ -38,7 +41,6 @@ export class IngredientController {
       const validation = await validateDto(CreateIngredientDto, req.body as Record<string, unknown>);
       if (!validation.valid) {
         throw new AppError('Validation failed', 400);
-        // details are lost with AppError; for now keep it simple, can be enhanced later
       }
 
       const created = await this.ingredientService.createIngredient(req.body as any);
@@ -50,7 +52,10 @@ export class IngredientController {
 
   public updateIngredient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const ingredientId = typeof req.params.id === 'string' ? req.params.id : '';
+      const ingredientId = Number(req.params.id);
+      if (isNaN(ingredientId)) {
+        throw new AppError('Invalid ingredient ID', 400);
+      }
       const validation = await validateDto(UpdateIngredientDto, req.body as Record<string, unknown>);
       if (!validation.valid) {
         throw new AppError('Validation failed', 400);
@@ -69,7 +74,10 @@ export class IngredientController {
 
   public deleteIngredient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const ingredientId = typeof req.params.id === 'string' ? req.params.id : '';
+      const ingredientId = Number(req.params.id);
+      if (isNaN(ingredientId)) {
+        throw new AppError('Invalid ingredient ID', 400);
+      }
       const deleted = await this.ingredientService.deleteIngredient(ingredientId);
 
       if (!deleted) {

@@ -1,5 +1,5 @@
 export interface IngredientResponseDto {
-  id: string;
+  id: number;
   name: string;
   description: string;
   category: string;

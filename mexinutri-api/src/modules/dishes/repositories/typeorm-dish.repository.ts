@@ -15,7 +15,7 @@ export class TypeOrmDishRepository implements DishRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
-  public async findById(id: string): Promise<DishEntity | null> {
+  public async findById(id: number): Promise<DishEntity | null> {
     const entity = await this.repo.findOne({ where: { id }, relations: ['ingredients'] });
     return entity ? this.toDomain(entity) : null;
   }
@@ -35,14 +35,14 @@ export class TypeOrmDishRepository implements DishRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
-  public async create(dish: DishEntity): Promise<DishEntity> {
+  public async create(data: Omit<DishEntity, 'id'>): Promise<DishEntity> {
     const entity = this.repo.create({
-      id: dish.id,
-      name: dish.name,
-      description: dish.description,
-      category: dish.category,
-      tags: dish.tags,
-      ingredients: dish.ingredients.map((ing) => ({
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      tags: data.tags,
+      imageUrl: data.imageUrl,
+      ingredients: data.ingredients.map((ing) => ({
         ingredientId: ing.ingredientId,
         name: ing.name,
         quantity: ing.quantity,
@@ -51,12 +51,11 @@ export class TypeOrmDishRepository implements DishRepository {
     });
 
     const saved = await this.repo.save(entity);
-    // Reload to get eager relations populated
     const reloaded = await this.repo.findOne({ where: { id: saved.id }, relations: ['ingredients'] });
     return this.toDomain(reloaded!);
   }
 
-  public async update(id: string, data: Partial<DishEntity>): Promise<DishEntity | null> {
+  public async update(id: number, data: Partial<DishEntity>): Promise<DishEntity | null> {
     const existing = await this.repo.findOne({ where: { id }, relations: ['ingredients'] });
     if (!existing) return null;
 
@@ -64,12 +63,11 @@ export class TypeOrmDishRepository implements DishRepository {
     if (data.description !== undefined) existing.description = data.description;
     if (data.category !== undefined) existing.category = data.category;
     if (data.tags !== undefined) existing.tags = data.tags;
+    if (data.imageUrl !== undefined) existing.imageUrl = data.imageUrl;
 
     if (data.ingredients !== undefined) {
-      // Remove old and create new
       const ingRepo = AppDataSource.getRepository(DishIngredientEntityTypeOrm);
       await ingRepo.delete({ dish: { id } });
-
       for (const ing of data.ingredients) {
         const newIng = ingRepo.create({
           ingredientId: ing.ingredientId,
@@ -87,7 +85,7 @@ export class TypeOrmDishRepository implements DishRepository {
     return this.toDomain(reloaded!);
   }
 
-  public async delete(id: string): Promise<boolean> {
+  public async delete(id: number): Promise<boolean> {
     const result = await this.repo.delete(id);
     return (result.affected ?? 0) > 0;
   }
@@ -99,6 +97,7 @@ export class TypeOrmDishRepository implements DishRepository {
       description: entity.description,
       category: entity.category,
       tags: entity.tags,
+      imageUrl: entity.imageUrl,
       ingredients: entity.ingredients.map((ing) => ({
         ingredientId: ing.ingredientId,
         name: ing.name,

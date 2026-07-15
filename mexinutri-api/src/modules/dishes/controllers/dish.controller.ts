@@ -20,7 +20,10 @@ export class DishController {
 
   public getDishById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dishId = typeof req.params.id === 'string' ? req.params.id : '';
+      const dishId = Number(req.params.id);
+      if (isNaN(dishId)) {
+        throw new AppError('Invalid dish ID', 400);
+      }
       const dish = await this.dishService.getDishById(dishId);
 
       if (!dish) {
@@ -49,7 +52,10 @@ export class DishController {
 
   public updateDish = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dishId = typeof req.params.id === 'string' ? req.params.id : '';
+      const dishId = Number(req.params.id);
+      if (isNaN(dishId)) {
+        throw new AppError('Invalid dish ID', 400);
+      }
       const validation = await validateDto(UpdateDishDto, req.body as Record<string, unknown>);
       if (!validation.valid) {
         throw new AppError('Validation failed', 400);
@@ -68,7 +74,10 @@ export class DishController {
 
   public deleteDish = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dishId = typeof req.params.id === 'string' ? req.params.id : '';
+      const dishId = Number(req.params.id);
+      if (isNaN(dishId)) {
+        throw new AppError('Invalid dish ID', 400);
+      }
       const deleted = await this.dishService.deleteDish(dishId);
 
       if (!deleted) {

@@ -4,49 +4,49 @@ import { AppDataSource } from '../../../config/database';
 
 export interface DishRepository {
   findAll(): Promise<DishEntity[]>;
-  findById(id: string): Promise<DishEntity | null>;
+  findById(id: number): Promise<DishEntity | null>;
   findByQuery(query: string): Promise<DishEntity[]>;
-  create(dish: DishEntity): Promise<DishEntity>;
-  update(id: string, data: Partial<DishEntity>): Promise<DishEntity | null>;
-  delete(id: string): Promise<boolean>;
+  create(dish: Omit<DishEntity, 'id'>): Promise<DishEntity>;
+  update(id: number, data: Partial<DishEntity>): Promise<DishEntity | null>;
+  delete(id: number): Promise<boolean>;
 }
 
 const seedDishes: DishEntity[] = [
   {
-    id: 'dish-huevos-rancheros',
+    id: 1,
     name: 'Huevos rancheros',
     description: 'Platillo tradicional con huevo, tortilla y salsa.',
     category: 'Desayuno',
     tags: ['huevo', 'tortilla', 'desayuno', 'mexicano'],
     ingredients: [
-      { ingredientId: 'ingredient-huevo', name: 'Huevo', quantity: 2, unit: 'pieza' },
-      { ingredientId: 'ingredient-tomate', name: 'Tomate', quantity: 100, unit: 'g' },
-      { ingredientId: 'ingredient-tortilla-maiz', name: 'Tortilla de maíz', quantity: 2, unit: 'pieza' },
-      { ingredientId: 'ingredient-cebolla', name: 'Cebolla', quantity: 20, unit: 'g' },
+      { ingredientId: 1, name: 'Huevo', quantity: 2, unit: 'pieza' },
+      { ingredientId: 7, name: 'Tomate', quantity: 100, unit: 'g' },
+      { ingredientId: 5, name: 'Tortilla de maíz', quantity: 2, unit: 'pieza' },
+      { ingredientId: 8, name: 'Cebolla', quantity: 20, unit: 'g' },
     ],
   },
   {
-    id: 'dish-ensalada-espinaca',
+    id: 2,
     name: 'Ensalada de espinaca',
     description: 'Ensalada ligera con espinaca y aguacate.',
     category: 'Ensalada',
     tags: ['espinaca', 'ensalada', 'saludable'],
     ingredients: [
-      { ingredientId: 'ingredient-espinaca', name: 'Espinaca', quantity: 100, unit: 'g' },
-      { ingredientId: 'ingredient-aguacate', name: 'Aguacate', quantity: 1, unit: 'pieza' },
-      { ingredientId: 'ingredient-tomate', name: 'Tomate', quantity: 100, unit: 'g' },
+      { ingredientId: 2, name: 'Espinaca', quantity: 100, unit: 'g' },
+      { ingredientId: 6, name: 'Aguacate', quantity: 1, unit: 'pieza' },
+      { ingredientId: 7, name: 'Tomate', quantity: 100, unit: 'g' },
     ],
   },
   {
-    id: 'dish-tacos-pollo',
+    id: 3,
     name: 'Tacos de pollo saludables',
     description: 'Tacos con pechuga de pollo y vegetales.',
     category: 'Comida',
     tags: ['pollo', 'taco', 'saludable'],
     ingredients: [
-      { ingredientId: 'ingredient-pechuga-pollo', name: 'Pechuga de pollo', quantity: 150, unit: 'g' },
-      { ingredientId: 'ingredient-tortilla-maiz', name: 'Tortilla de maíz', quantity: 2, unit: 'pieza' },
-      { ingredientId: 'ingredient-aguacate', name: 'Aguacate', quantity: 1, unit: 'pieza' },
+      { ingredientId: 3, name: 'Pechuga de pollo', quantity: 150, unit: 'g' },
+      { ingredientId: 5, name: 'Tortilla de maíz', quantity: 2, unit: 'pieza' },
+      { ingredientId: 6, name: 'Aguacate', quantity: 1, unit: 'pieza' },
     ],
   },
 ];
@@ -66,16 +66,13 @@ export function getDishRepository(): DishRepository {
 
 export class InMemoryDishRepository implements DishRepository {
   private readonly dishes: DishEntity[] = [...seedDishes];
-
-  public static getInstance(): DishRepository {
-    return getDishRepository();
-  }
+  private nextId: number = 4;
 
   public async findAll(): Promise<DishEntity[]> {
     return [...this.dishes];
   }
 
-  public async findById(id: string): Promise<DishEntity | null> {
+  public async findById(id: number): Promise<DishEntity | null> {
     return this.dishes.find((dish) => dish.id === id) ?? null;
   }
 
@@ -92,12 +89,13 @@ export class InMemoryDishRepository implements DishRepository {
     });
   }
 
-  public async create(dish: DishEntity): Promise<DishEntity> {
+  public async create(data: Omit<DishEntity, 'id'>): Promise<DishEntity> {
+    const dish: DishEntity = { id: this.nextId++, ...data };
     this.dishes.push(dish);
     return dish;
   }
 
-  public async update(id: string, data: Partial<DishEntity>): Promise<DishEntity | null> {
+  public async update(id: number, data: Partial<DishEntity>): Promise<DishEntity | null> {
     const index = this.dishes.findIndex((dish) => dish.id === id);
     if (index === -1) {
       return null;
@@ -108,7 +106,7 @@ export class InMemoryDishRepository implements DishRepository {
     return updated;
   }
 
-  public async delete(id: string): Promise<boolean> {
+  public async delete(id: number): Promise<boolean> {
     const index = this.dishes.findIndex((dish) => dish.id === id);
     if (index === -1) {
       return false;

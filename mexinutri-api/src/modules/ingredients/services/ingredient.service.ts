@@ -18,7 +18,7 @@ export class IngredientService {
     return ingredients.map((ingredient) => this.mapToResponse(ingredient));
   }
 
-  public async getIngredientById(id: string): Promise<IngredientResponseDto | null> {
+  public async getIngredientById(id: number): Promise<IngredientResponseDto | null> {
     const ingredient = await this.ingredientRepository.findById(id);
 
     if (!ingredient) {
@@ -29,19 +29,12 @@ export class IngredientService {
   }
 
   public async createIngredient(data: Omit<IngredientEntity, 'id'>): Promise<IngredientResponseDto> {
-    const id = `ingredient-${data.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-
-    const ingredient: IngredientEntity = {
-      id,
-      ...data,
-    };
-
-    const created = await this.ingredientRepository.create(ingredient);
+    const created = await this.ingredientRepository.create(data);
     return this.mapToResponse(created);
   }
 
   public async updateIngredient(
-    id: string,
+    id: number,
     data: Partial<Omit<IngredientEntity, 'id'>>,
   ): Promise<IngredientResponseDto | null> {
     const updated = await this.ingredientRepository.update(id, data);
@@ -53,7 +46,7 @@ export class IngredientService {
     return this.mapToResponse(updated);
   }
 
-  public async deleteIngredient(id: string): Promise<boolean> {
+  public async deleteIngredient(id: number): Promise<boolean> {
     return this.ingredientRepository.delete(id);
   }
 
