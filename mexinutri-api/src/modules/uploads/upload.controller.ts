@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import multer from 'multer';
+import multer, { type FileFilterCallback } from 'multer';
 import { UploadService } from './upload.service';
 import { getDishRepository } from '../dishes/repositories/dish.repository';
 import { AppError } from '../../common/error-handler';
@@ -7,7 +7,7 @@ import { AppError } from '../../common/error-handler';
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
