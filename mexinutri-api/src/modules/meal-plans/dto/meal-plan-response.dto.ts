@@ -2,6 +2,7 @@ export interface MealPlanItemDto {
   type: 'dish' | 'ingredients';
   name?: string;
   dishId?: number;
+  imageUrl?: string;
   ingredients?: {
     ingredientId: number;
     name: string;

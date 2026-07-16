@@ -4,10 +4,13 @@ import { type IngredientEntity } from '../../ingredients/entities/ingredient.ent
 import { type MealPlanResponseDto, type MealPlanItemDto } from '../dto/meal-plan-response.dto';
 
 export class MealPlanService {
-  constructor(
-    private readonly dishRepository = getDishRepository(),
-    private readonly ingredientRepository = getIngredientRepository(),
-  ) {}
+  private get dishRepository() {
+    return getDishRepository();
+  }
+
+  private get ingredientRepository() {
+    return getIngredientRepository();
+  }
 
   public async generate(targetCalories: number, numberOfMeals?: number): Promise<MealPlanResponseDto> {
     const mealsToGenerate = numberOfMeals ?? 3;
@@ -46,6 +49,7 @@ export class MealPlanService {
           type: 'dish',
           name: suitableDish.dish.name,
           dishId: suitableDish.dish.id,
+          imageUrl: suitableDish.dish.imageUrl,
           ingredients: suitableDish.dish.ingredients.map((ing) => ({
             ingredientId: ing.ingredientId,
             name: ing.name,
