@@ -19,7 +19,10 @@ const upload = multer({
 
 export class UploadController {
   private readonly uploadService = new UploadService();
-  private readonly dishRepository = getDishRepository();
+
+  private get dishRepository() {
+    return getDishRepository();
+  }
 
   public uploadMiddleware = upload.single('image');
 
