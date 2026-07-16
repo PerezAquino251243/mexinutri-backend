@@ -7,7 +7,7 @@ class NutritionItemDto {
   ingredientId!: number;
 
   @IsNumber()
-  @Min(1)
+  @Min(0.01)
   quantity!: number;
 }
 
