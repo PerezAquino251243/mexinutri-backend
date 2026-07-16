@@ -12,8 +12,11 @@ export const AppDataSource = new DataSource({
   username: env.dbUsername,
   password: env.dbPassword,
   database: env.dbDatabase,
-  synchronize: false,
+  synchronize: true,
   logging: false,
+  ssl: {
+    rejectUnauthorized: false,
+  },
   entities: [IngredientEntity, DishEntity, DishIngredientEntity],
 });
 

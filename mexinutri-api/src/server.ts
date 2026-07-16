@@ -9,6 +9,7 @@ async function bootstrap(): Promise<void> {
     await AppDataSource.initialize();
     console.log('[Database] Connected to PostgreSQL');
   } catch (err) {
+    console.error('[Database] Connection error:', err);
     console.log('[Database] PostgreSQL not available, using in-memory storage');
   }
 
