@@ -162,6 +162,10 @@ export function getIngredientRepository(): IngredientRepository {
   return sharedInstance;
 }
 
+export function resetIngredientRepository(): void {
+  sharedInstance = null;
+}
+
 export class InMemoryIngredientRepository implements IngredientRepository {
   private readonly ingredients: IngredientEntity[] = [...seedIngredients];
   private nextId: number = 10;

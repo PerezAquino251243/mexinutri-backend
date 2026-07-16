@@ -7,7 +7,9 @@ export interface NutritionCalculationInput {
 }
 
 export class NutritionService {
-  constructor(private readonly ingredientRepository = getIngredientRepository()) {}
+  private get ingredientRepository() {
+    return getIngredientRepository();
+  }
 
   public async calculate(input: NutritionCalculationInput[]): Promise<NutritionResponseDto> {
     let totalCalories = 0;

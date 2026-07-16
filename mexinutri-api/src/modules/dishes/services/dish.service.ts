@@ -22,10 +22,13 @@ export interface UpdateDishInput {
 }
 
 export class DishService {
-  constructor(
-    private readonly dishRepository: DishRepository = getDishRepository(),
-    private readonly ingredientRepository: IngredientRepository = getIngredientRepository(),
-  ) {}
+  private get dishRepository(): DishRepository {
+    return getDishRepository();
+  }
+
+  private get ingredientRepository(): IngredientRepository {
+    return getIngredientRepository();
+  }
 
   public async listDishes(search?: string): Promise<DishResponseDto[]> {
     const dishes = search

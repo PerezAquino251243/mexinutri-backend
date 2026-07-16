@@ -6,9 +6,9 @@ import {
 } from '../repositories/ingredient.repository';
 
 export class IngredientService {
-  constructor(
-    private readonly ingredientRepository: IngredientRepository = getIngredientRepository(),
-  ) {}
+  private get ingredientRepository(): IngredientRepository {
+    return getIngredientRepository();
+  }
 
   public async listIngredients(search?: string): Promise<IngredientResponseDto[]> {
     const ingredients = search

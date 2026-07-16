@@ -64,6 +64,10 @@ export function getDishRepository(): DishRepository {
   return sharedInstance;
 }
 
+export function resetDishRepository(): void {
+  sharedInstance = null;
+}
+
 export class InMemoryDishRepository implements DishRepository {
   private readonly dishes: DishEntity[] = [...seedDishes];
   private nextId: number = 4;

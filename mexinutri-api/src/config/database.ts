@@ -12,7 +12,7 @@ export const AppDataSource = new DataSource({
   username: env.dbUsername,
   password: env.dbPassword,
   database: env.dbDatabase,
-  synchronize: true,
+  synchronize: false,
   logging: false,
   ssl: {
     rejectUnauthorized: false,
