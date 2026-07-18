@@ -3,10 +3,13 @@ import { getIngredientRepository } from '../../ingredients/repositories/ingredie
 import { type SearchResponseDto } from '../dto/search.dto';
 
 export class SearchService {
-  constructor(
-    private readonly ingredientRepository = getIngredientRepository(),
-    private readonly dishRepository = getDishRepository(),
-  ) {}
+  private get ingredientRepository() {
+    return getIngredientRepository();
+  }
+
+  private get dishRepository() {
+    return getDishRepository();
+  }
 
   public async search(query: string): Promise<SearchResponseDto> {
     const normalizedQuery = query.trim().toLowerCase();
