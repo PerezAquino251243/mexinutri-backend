@@ -1,6 +1,5 @@
 import { getDishRepository } from '../../dishes/repositories/dish.repository';
 import { getIngredientRepository } from '../../ingredients/repositories/ingredient.repository';
-import { type IngredientEntity } from '../../ingredients/entities/ingredient.entity';
 import { type MealPlanResponseDto, type MealPlanItemDto } from '../dto/meal-plan-response.dto';
 
 export class MealPlanService {
@@ -17,7 +16,6 @@ export class MealPlanService {
     const targetPerMeal = targetCalories / mealsToGenerate;
 
     const allDishes = await this.dishRepository.findAll();
-    const allIngredients = await this.ingredientRepository.findAll();
 
     const dishesWithNutrition = await Promise.all(
       allDishes.map(async (dish) => ({
@@ -67,19 +65,6 @@ export class MealPlanService {
       }
     }
 
-    const remainingCalories = targetCalories - totalNutrition.calories;
-
-    if (remainingCalories > 50) {
-      const fillerMeal = await this.buildMealFromIngredients(remainingCalories, allIngredients);
-      if (fillerMeal) {
-        meals.push(fillerMeal);
-        totalNutrition.calories += fillerMeal.nutrition.calories;
-        totalNutrition.protein += fillerMeal.nutrition.protein;
-        totalNutrition.carbs += fillerMeal.nutrition.carbs;
-        totalNutrition.fat += fillerMeal.nutrition.fat;
-      }
-    }
-
     if (totalNutrition.calories < targetCalories) {
       const scale = targetCalories / totalNutrition.calories;
       this.scaleMealPlan(meals, scale);
@@ -97,62 +82,6 @@ export class MealPlanService {
         protein: Number(totalNutrition.protein.toFixed(2)),
         carbs: Number(totalNutrition.carbs.toFixed(2)),
         fat: Number(totalNutrition.fat.toFixed(2)),
-      },
-    };
-  }
-
-  private async buildMealFromIngredients(
-    targetCalories: number,
-    allIngredients: IngredientEntity[],
-  ): Promise<MealPlanItemDto | null> {
-    if (allIngredients.length === 0) return null;
-
-    const shuffled = this.shuffle([...allIngredients]);
-
-    const selectedIngredients: { ingredientId: number; name: string; quantity: number; unit: string }[] = [];
-    let accumulatedCalories = 0;
-    let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-
-    for (const ingredient of shuffled) {
-      if (accumulatedCalories >= targetCalories * 0.9) break;
-
-      const baseValue = this.getBaseQuantityValue(ingredient);
-      const calPerUnit = ingredient.calories / baseValue;
-      const remainingCal = targetCalories - accumulatedCalories;
-      const quantity = Math.round((remainingCal / calPerUnit / baseValue) * baseValue);
-
-      if (quantity <= 0) continue;
-
-      const multiplier = quantity / baseValue;
-      const itemCalories = ingredient.calories * multiplier;
-
-      selectedIngredients.push({
-        ingredientId: ingredient.id,
-        name: ingredient.name,
-        quantity,
-        unit: ingredient.unit,
-      });
-
-      accumulatedCalories += itemCalories;
-      nutrition.calories += itemCalories;
-      nutrition.protein += ingredient.protein * multiplier;
-      nutrition.carbs += ingredient.carbs * multiplier;
-      nutrition.fat += ingredient.fat * multiplier;
-
-      if (selectedIngredients.length >= 4) break;
-    }
-
-    if (selectedIngredients.length === 0) return null;
-
-    return {
-      type: 'ingredients',
-      name: 'Combinación de ingredientes',
-      ingredients: selectedIngredients,
-      nutrition: {
-        calories: Number(nutrition.calories.toFixed(2)),
-        protein: Number(nutrition.protein.toFixed(2)),
-        carbs: Number(nutrition.carbs.toFixed(2)),
-        fat: Number(nutrition.fat.toFixed(2)),
       },
     };
   }
