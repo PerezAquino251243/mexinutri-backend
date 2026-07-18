@@ -26,20 +26,21 @@ export class MealPlanService {
       })),
     );
 
-    const sortedDishes = [...dishesWithNutrition].sort(
-      (a, b) => Math.abs(a.nutrition.calories - targetPerMeal) - Math.abs(b.nutrition.calories - targetPerMeal),
+    const eligibleDishes = dishesWithNutrition.filter(
+      (d) =>
+        d.nutrition.calories <= targetPerMeal * 1.5 &&
+        d.nutrition.calories >= targetPerMeal * 0.3,
     );
+
+    const shuffledDishes = this.shuffle([...eligibleDishes]);
 
     const meals: MealPlanItemDto[] = [];
     const usedDishIds = new Set<number>();
     let totalNutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    for (let i = 0; i < mealsToGenerate && sortedDishes.length > 0; i++) {
-      const suitableDish = sortedDishes.find(
-        (d) =>
-          !usedDishIds.has(d.dish.id) &&
-          d.nutrition.calories <= targetPerMeal * 1.5 &&
-          d.nutrition.calories >= targetPerMeal * 0.3,
+    for (let i = 0; i < mealsToGenerate && shuffledDishes.length > 0; i++) {
+      const suitableDish = shuffledDishes.find(
+        (d) => !usedDishIds.has(d.dish.id),
       );
 
       if (suitableDish) {
@@ -79,7 +80,7 @@ export class MealPlanService {
       }
     }
 
-    if (totalNutrition.calories < targetCalories * 0.9) {
+    if (totalNutrition.calories < targetCalories) {
       const scale = targetCalories / totalNutrition.calories;
       this.scaleMealPlan(meals, scale);
       totalNutrition.calories = targetCalories;
@@ -106,13 +107,13 @@ export class MealPlanService {
   ): Promise<MealPlanItemDto | null> {
     if (allIngredients.length === 0) return null;
 
-    const sorted = [...allIngredients].sort((a, b) => b.protein - a.protein);
+    const shuffled = this.shuffle([...allIngredients]);
 
     const selectedIngredients: { ingredientId: number; name: string; quantity: number; unit: string }[] = [];
     let accumulatedCalories = 0;
     let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    for (const ingredient of sorted) {
+    for (const ingredient of shuffled) {
       if (accumulatedCalories >= targetCalories * 0.9) break;
 
       const baseValue = this.getBaseQuantityValue(ingredient);
@@ -187,6 +188,16 @@ export class MealPlanService {
     if (ingredient.unit === 'g') return 100;
     if (ingredient.unit === 'pieza') return 1;
     return Number(ingredient.baseAmount.match(/\d+/)?.[0] ?? 1);
+  }
+
+  private shuffle<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = array[i] as T;
+      array[i] = array[j] as T;
+      array[j] = temp;
+    }
+    return array;
   }
 
   private scaleMealPlan(meals: MealPlanItemDto[], scale: number): void {
