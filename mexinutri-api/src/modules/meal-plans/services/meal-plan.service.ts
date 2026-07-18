@@ -68,7 +68,7 @@ export class MealPlanService {
 
     const remainingCalories = targetCalories - totalNutrition.calories;
 
-    if (remainingCalories > 50 && meals.length < mealsToGenerate) {
+    if (remainingCalories > 50) {
       const fillerMeal = await this.buildMealFromIngredients(remainingCalories, allIngredients);
       if (fillerMeal) {
         meals.push(fillerMeal);
@@ -77,6 +77,15 @@ export class MealPlanService {
         totalNutrition.carbs += fillerMeal.nutrition.carbs;
         totalNutrition.fat += fillerMeal.nutrition.fat;
       }
+    }
+
+    if (totalNutrition.calories < targetCalories * 0.9) {
+      const scale = targetCalories / totalNutrition.calories;
+      this.scaleMealPlan(meals, scale);
+      totalNutrition.calories = targetCalories;
+      totalNutrition.protein *= scale;
+      totalNutrition.carbs *= scale;
+      totalNutrition.fat *= scale;
     }
 
     return {
@@ -178,5 +187,19 @@ export class MealPlanService {
     if (ingredient.unit === 'g') return 100;
     if (ingredient.unit === 'pieza') return 1;
     return Number(ingredient.baseAmount.match(/\d+/)?.[0] ?? 1);
+  }
+
+  private scaleMealPlan(meals: MealPlanItemDto[], scale: number): void {
+    for (const meal of meals) {
+      if (meal.ingredients) {
+        for (const ingredient of meal.ingredients) {
+          ingredient.quantity = Math.round(ingredient.quantity * scale);
+        }
+      }
+      meal.nutrition.calories = Number((meal.nutrition.calories * scale).toFixed(2));
+      meal.nutrition.protein = Number((meal.nutrition.protein * scale).toFixed(2));
+      meal.nutrition.carbs = Number((meal.nutrition.carbs * scale).toFixed(2));
+      meal.nutrition.fat = Number((meal.nutrition.fat * scale).toFixed(2));
+    }
   }
 }
