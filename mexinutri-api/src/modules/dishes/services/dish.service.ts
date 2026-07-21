@@ -1,5 +1,5 @@
 import { type IngredientRepository, getIngredientRepository } from '../../ingredients/repositories/ingredient.repository';
-import { type DishResponseDto } from '../dto/dish.dto';
+import { type DishResponseDto, type DishIngredientDto } from '../dto/dish.dto';
 import { type DishEntity, type DishIngredientEntity } from '../entities/dish.entity';
 import { type DishRepository, getDishRepository } from '../repositories/dish.repository';
 
@@ -124,7 +124,7 @@ export class DishService {
   }
 
   private async mapToResponse(dish: DishEntity): Promise<DishResponseDto> {
-    const nutrition = await this.calculateNutrition(dish);
+    const { ingredients, nutrition } = await this.calculateNutrition(dish);
 
     return {
       id: dish.id,
@@ -132,7 +132,7 @@ export class DishService {
       description: dish.description,
       category: dish.category,
       tags: dish.tags,
-      ingredients: dish.ingredients,
+      ingredients,
       imageUrl: dish.imageUrl,
       nutrition,
     };
@@ -143,6 +143,7 @@ export class DishService {
     let protein = 0;
     let carbs = 0;
     let fat = 0;
+    const ingredients: DishIngredientDto[] = [];
 
     for (const ingredientRef of dish.ingredients) {
       const ingredient = await this.ingredientRepository.findById(ingredientRef.ingredientId);
@@ -151,18 +152,36 @@ export class DishService {
       }
 
       const multiplier = ingredientRef.quantity / this.getBaseQuantityValue(ingredient);
+      const ingCalories = Number((ingredient.calories * multiplier).toFixed(2));
+      const ingProtein = Number((ingredient.protein * multiplier).toFixed(2));
+      const ingCarbs = Number((ingredient.carbs * multiplier).toFixed(2));
+      const ingFat = Number((ingredient.fat * multiplier).toFixed(2));
 
-      calories += ingredient.calories * multiplier;
-      protein += ingredient.protein * multiplier;
-      carbs += ingredient.carbs * multiplier;
-      fat += ingredient.fat * multiplier;
+      ingredients.push({
+        ingredientId: ingredientRef.ingredientId,
+        name: ingredientRef.name,
+        quantity: ingredientRef.quantity,
+        unit: ingredientRef.unit,
+        calories: ingCalories,
+        protein: ingProtein,
+        carbs: ingCarbs,
+        fat: ingFat,
+      });
+
+      calories += ingCalories;
+      protein += ingProtein;
+      carbs += ingCarbs;
+      fat += ingFat;
     }
 
     return {
-      calories: Number(calories.toFixed(2)),
-      protein: Number(protein.toFixed(2)),
-      carbs: Number(carbs.toFixed(2)),
-      fat: Number(fat.toFixed(2)),
+      ingredients,
+      nutrition: {
+        calories: Number(calories.toFixed(2)),
+        protein: Number(protein.toFixed(2)),
+        carbs: Number(carbs.toFixed(2)),
+        fat: Number(fat.toFixed(2)),
+      },
     };
   }
 

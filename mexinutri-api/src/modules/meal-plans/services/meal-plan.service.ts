@@ -49,12 +49,35 @@ export class MealPlanService {
           name: suitableDish.dish.name,
           dishId: suitableDish.dish.id,
           imageUrl: suitableDish.dish.imageUrl,
-          ingredients: suitableDish.dish.ingredients.map((ing) => ({
-            ingredientId: ing.ingredientId,
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-          })),
+          ingredients: await Promise.all(
+            suitableDish.dish.ingredients.map(async (ing) => {
+              const fullIngredient = await this.ingredientRepository.findById(ing.ingredientId);
+              if (!fullIngredient) {
+                return {
+                  ingredientId: ing.ingredientId,
+                  name: ing.name,
+                  quantity: ing.quantity,
+                  unit: ing.unit,
+                  calories: 0,
+                  protein: 0,
+                  carbs: 0,
+                  fat: 0,
+                };
+              }
+              const baseValue = this.getBaseQuantityValue(fullIngredient);
+              const multiplier = ing.quantity / baseValue;
+              return {
+                ingredientId: ing.ingredientId,
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                calories: Number((fullIngredient.calories * multiplier).toFixed(2)),
+                protein: Number((fullIngredient.protein * multiplier).toFixed(2)),
+                carbs: Number((fullIngredient.carbs * multiplier).toFixed(2)),
+                fat: Number((fullIngredient.fat * multiplier).toFixed(2)),
+              };
+            }),
+          ),
           nutrition: suitableDish.nutrition,
         });
 
@@ -134,6 +157,10 @@ export class MealPlanService {
       if (meal.ingredients) {
         for (const ingredient of meal.ingredients) {
           ingredient.quantity = Math.round(ingredient.quantity * scale);
+          ingredient.calories = Number((ingredient.calories * scale).toFixed(2));
+          ingredient.protein = Number((ingredient.protein * scale).toFixed(2));
+          ingredient.carbs = Number((ingredient.carbs * scale).toFixed(2));
+          ingredient.fat = Number((ingredient.fat * scale).toFixed(2));
         }
       }
       meal.nutrition.calories = Number((meal.nutrition.calories * scale).toFixed(2));

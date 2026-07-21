@@ -8,6 +8,10 @@ export interface MealPlanItemDto {
     name: string;
     quantity: number;
     unit: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
   }[];
   nutrition: {
     calories: number;
